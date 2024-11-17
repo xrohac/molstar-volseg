@@ -8,6 +8,11 @@ molstar-extension/tsconfig.commonjs.tsbuildinfo
 !molstar-volseg/molstar-extension/scripts
 temp_working_folder/*
 !test-data/preprocessor/sample_segmentations/empiar/empiar-11756
+!test-data/preprocessor/sample_segmentations/emdb_masks/emd_1273_msk_1.map
+!test-data/preprocessor/sample_segmentations/emdb_masks/emd_1273_msk_2.map
+!test-data/preprocessor/sample_segmentations/emdb_masks/emd_1273_msk_3.map
+!test-data/preprocessor/sample_segmentations/emdb_masks/emd_1273_msk_4.map
+!test-data/preprocessor/sample_segmentations/emdb_masks/emd_1273_msk_5.map
 db/cellstar_db/tests/test_data/*
 test-data/preprocessor/db_building_parameters.json
 preprocessor/cellstar_preprocessor/tests/test_data/working_folder/*
@@ -15,6 +20,7 @@ non-preprocessed_data/
 vs_toolkit/tests/test_data/query_parameters/*
 test-data/preprocessor/sample_volumes/*
 !test-data/preprocessor/sample_volumes/emdb/EMD-1832.map
+!test-data/preprocessor/sample_volumes/emdb/EMD-1273.map
 !test-data/preprocessor/sample_segmentations/emdb_sff/emd_1832.hff
 test-data/preprocessor/sample_segmentations/*
 test-data/db/
@@ -65,6 +71,7 @@ test-data/preprocessor/temp_zarr_hierarchy_storage/
 preprocessor/emd_13793.map
 preprocessor/emd_13856.map.gz
 preprocessor/emd_1832.map
+preprocessor/emd_1273.map
 preprocessor/emd_9199_.map
 preprocessor/empiar_segmentations
 preprocessor/fake_segmentations/
@@ -74,7 +81,7 @@ preprocessor/output_internal_zarr/
 preprocessor/raw_input_files/
 preprocessor/real_volumes_for_converstion_to_fake_sff/
 preprocessor/sample_arr_plots/
-#preprocessor/sample_segmentations/
+preprocessor/sample_segmentations/
 preprocessor/sample_volumes/
 preprocessor/src/preprocessors/implementations/sff/data/*
 preprocessor/temp/
