@@ -81,8 +81,8 @@ preprocessor/output_internal_zarr/
 preprocessor/raw_input_files/
 preprocessor/real_volumes_for_converstion_to_fake_sff/
 preprocessor/sample_arr_plots/
-preprocessor/sample_segmentations/
-preprocessor/sample_volumes/
+#preprocessor/sample_segmentations/
+#preprocessor/sample_volumes/
 preprocessor/src/preprocessors/implementations/sff/data/*
 preprocessor/temp/
 PYTHONPATH.sh
