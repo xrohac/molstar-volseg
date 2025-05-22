@@ -1,5 +1,6 @@
 import copy
 from typing import Dict, Set, Tuple, Union
+import time as times
 
 import numpy as np
 
@@ -39,7 +40,6 @@ class SegmentationSetTable:
             # here we need a way to access zarr data (segment_list)
             # and find segment id for each value (traverse dict backwards)
             # and set d[segment_value] = to the found segment id
-
         return d
 
     def get_categories(self, ids: Tuple) -> Tuple:

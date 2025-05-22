@@ -14,7 +14,6 @@ dependencies:
   - matplotlib==3.5.1
   - mrcfile==1.4.0
   - numcodecs==0.9.1
-  - numpy==1.23.5
   - pytest==7.1.2
   - pytest-asyncio==0.18.3
   - pytest-benchmark==3.4.1
@@ -36,25 +35,27 @@ dependencies:
   - mkdocs
 
   - pip:
-    # - -r requirements.txt
-    - git+https://github.com/molstar/ciftools-python.git@b074526a8b418bc68d83ae5556a627d2d6ceabdb#egg=ciftools
-    - sfftk==0.5.5.dev1
-    - sfftk-rw==0.7.1
-    - SimpleParse @ git+https://github.com/mcfletch/simpleparse.git@57c8d734bdc165581fbacfeecabe25a66c3452a4
-    - tensorstore
-    - killport
-    - Pillow
-    - typer==0.7.0
-    - autoflake
-    - isort
-    - black
-    - pyometiff
-    - nibabel
-    - seaborn
-    - -e ./preprocessor
-    - -e ./db
-    - -e ./query
-    - -e ./server
-    - h5py
-    - vedo
-    - mkdocs-material
+      # - -r requirements.txt
+      - numpy==1.23.5
+      - git+https://github.com/molstar/ciftools-python.git@b074526a8b418bc68d83ae5556a627d2d6ceabdb#egg=ciftools
+      - sfftk==0.5.5.dev1
+      - sfftk-rw==0.7.1
+      - SimpleParse @ git+https://github.com/mcfletch/simpleparse.git@57c8d734bdc165581fbacfeecabe25a66c3452a4
+      - tensorstore
+      - killport
+      - Pillow
+      - typer==0.7.0
+      - autoflake
+      - isort
+      - black
+      - pyometiff
+      - nibabel
+      - seaborn
+      - -e ./preprocessor
+      - -e ./db
+      - -e ./query
+      - -e ./server
+      - h5py
+      - vedo
+      - mkdocs-material
+      - cupy

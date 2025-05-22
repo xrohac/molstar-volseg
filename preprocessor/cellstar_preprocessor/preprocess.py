@@ -1,10 +1,12 @@
 import asyncio
 import logging
 import shutil
+from tracemalloc import start
 import typing
 from argparse import ArgumentError
 from enum import Enum
 from pathlib import Path
+import time as times
 
 import typer
 import zarr
@@ -83,6 +85,7 @@ from cellstar_preprocessor.flows.segmentation.ome_zarr_labels_preprocessing impo
 from cellstar_preprocessor.flows.segmentation.segmentation_downsampling import (
     sff_segmentation_downsampling,
 )
+
 from cellstar_preprocessor.flows.segmentation.sff_preprocessing import sff_preprocessing
 from cellstar_preprocessor.flows.volume.extract_metadata_from_map import (
     extract_metadata_from_map,
@@ -118,6 +121,14 @@ from cellstar_preprocessor.flows.volume.quantize_internal_volume import (
     quantize_internal_volume,
 )
 from cellstar_preprocessor.flows.volume.volume_downsampling import volume_downsampling
+from cellstar_preprocessor.flows.volume.volume_downsampling_gpu import volume_downsampling_gpu
+from cellstar_preprocessor.flows.segmentation.mask_segmentation_preprocessing_gpu import (
+    mask_segmentation_preprocessing_gpu,
+)
+from cellstar_preprocessor.flows.segmentation.segmentation_downsampling_gpu import (
+    sff_segmentation_downsampling_gpu,
+)
+
 from cellstar_preprocessor.model.input import (
     DownsamplingParams,
     EntryData,
@@ -377,10 +388,9 @@ class MAPProcessVolumeTask(TaskBase):
 
     def execute(self) -> None:
         volume = self.internal_volume
-
         map_preprocessing(volume)
-        # in processing part do
-        volume_downsampling(volume)
+        # volume_downsampling(volume)
+        volume_downsampling_gpu(volume)
 
 
 class NIIProcessVolumeTask(TaskBase):
@@ -508,10 +518,10 @@ class MaskProcessSegmentationTask(TaskBase):
 
     def execute(self) -> None:
         segmentation = self.internal_segmentation
-
-        mask_segmentation_preprocessing(internal_segmentation=segmentation)
-        sff_segmentation_downsampling(segmentation)
-
+        # mask_segmentation_preprocessing(internal_segmentation=segmentation)
+        mask_segmentation_preprocessing_gpu(internal_segmentation=segmentation)
+        # sff_segmentation_downsampling(segmentation)
+        sff_segmentation_downsampling_gpu(segmentation)
 
 class ProcessGeometricSegmentationTask(TaskBase):
     def __init__(self, internal_segmentation: InternalSegmentation):

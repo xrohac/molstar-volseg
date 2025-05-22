@@ -3,6 +3,7 @@ import math
 
 import dask.array as da
 import numpy as np
+import cupy as cp
 import zarr
 from cellstar_preprocessor.flows.common import create_dataset_wrapper
 
@@ -26,13 +27,19 @@ def generate_kernel_3d_arr(pattern: list[int]) -> np.ndarray:
         raise e
     return k
 
+def gaussian_kernel_3d(size: int, sigma: float) -> cp.ndarray:
+    """Generate a 3D Gaussian kernel."""
+    ax = cp.linspace(-(size // 2), size // 2, size)
+    xx, yy, zz = cp.meshgrid(ax, ax, ax, indexing='ij')
+    kernel = cp.exp(-(xx**2 + yy**2 + zz**2) / (2. * sigma**2))
+    return kernel / cp.sum(kernel)
+
 def normalize_axis_order_mrcfile(dask_arr: da.Array, mrc_header: object) -> da.Array:
     """
     Normalizes axis order to X, Y, Z (1, 2, 3)
     """
     h = mrc_header
     current_order = int(h.mapc) - 1, int(h.mapr) - 1, int(h.maps) - 1
-
     if current_order != (0, 1, 2):
         print(f"Reordering axes from {current_order}...")
         ao = {v: i for i, v in enumerate(current_order)}
@@ -40,7 +47,7 @@ def normalize_axis_order_mrcfile(dask_arr: da.Array, mrc_header: object) -> da.A
         dask_arr = dask_arr.transpose().transpose(ao[2], ao[1], ao[0]).transpose()
     else:
         dask_arr = dask_arr.transpose()
-
+    
     return dask_arr
 
 
@@ -65,5 +72,5 @@ def store_volume_data_in_zarr_stucture(
         params_for_storing=params_for_storing,
         is_empty=True,
     )
-
+    
     da.to_zarr(arr=data, url=zarr_arr, overwrite=True, compute=True)
