@@ -1,6 +1,7 @@
 import numcodecs
 import numpy as np
 import zarr
+import time as times
 from cellstar_preprocessor.flows.common import create_dataset_wrapper
 from cellstar_preprocessor.flows.segmentation.downsampling_level_dict import (
     DownsamplingLevelDict,
@@ -11,7 +12,6 @@ from cellstar_preprocessor.flows.segmentation.segmentation_set_table import (
 from cellstar_preprocessor.tools.magic_kernel_downsampling_3d.magic_kernel_downsampling_3d import (
     MagicKernel3dDownsampler,
 )
-
 
 def store_downsampling_levels_in_zarr(
     levels_list: list[DownsamplingLevelDict],
@@ -71,14 +71,14 @@ def downsample_categorical_data(
     )
     origin_coords = np.array([0, 0, 0])
     max_coords = np.subtract(previous_level_grid.shape, (1, 1, 1))
-    # loop over voxels, c = coords of a single voxel
+
     for start_coords in target_voxels_coords:
         end_coords = start_coords + 2
         if (end_coords < origin_coords).any():
             end_coords = np.fmax(end_coords, origin_coords)
         if (end_coords > max_coords).any():
             end_coords = np.fmin(end_coords, max_coords)
-
+        
         block: np.ndarray = previous_level_grid[
             start_coords[0] : end_coords[0],
             start_coords[1] : end_coords[1],
@@ -88,17 +88,18 @@ def downsample_categorical_data(
         # exclude block if any dimension = 0
         if any(i == 0 for i in block.shape):
             continue
-
+        
         new_id: int = downsample_2x2x2_block(
             block, current_set_table, previous_level_set_table
         )
+        
         # putting that id in the location of new grid corresponding to that block
         current_level_grid[
             round(start_coords[0] / 2),
             round(start_coords[1] / 2),
             round(start_coords[2] / 2),
         ] = new_id
-
+      
     # need to check before conversion to int as in int grid nans => some guge number
     assert (
         np.isnan(current_level_grid).any() == False

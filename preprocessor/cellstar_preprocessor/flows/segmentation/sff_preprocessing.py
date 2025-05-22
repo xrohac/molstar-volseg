@@ -19,6 +19,7 @@ from cellstar_preprocessor.model.input import SegmentationPrimaryDescriptor
 from cellstar_preprocessor.model.segmentation import InternalSegmentation
 from vedo import Mesh
 
+import cupy as cp
 
 def sff_preprocessing(internal_segmentation: InternalSegmentation):
     hdf5_to_zarr(internal_segmentation=internal_segmentation)
@@ -67,7 +68,6 @@ def sff_preprocessing(internal_segmentation: InternalSegmentation):
         )
 
     print("Segmentation processed")
-
 
 def _process_three_d_volume_segmentation_data(
     segm_data_gr: zarr.Group,

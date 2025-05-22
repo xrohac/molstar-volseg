@@ -2,6 +2,9 @@ import math
 
 import dask.array as da
 import zarr
+import time as times
+from scipy.signal import fftconvolve
+
 from cellstar_preprocessor.flows.common import (
     compute_downsamplings_to_be_stored,
     compute_number_of_downsampling_steps,
@@ -87,6 +90,8 @@ def volume_downsampling(internal_volume: InternalVolume):
                 factor=2**3,
                 dtype=dask_arr.dtype,
             )
+            start_time = times.time()
+            print(ratios_to_be_stored)
             for i in range(downsampling_steps):
                 current_ratio = 2 ** (i + 1)
                 downsampled_data = dask_convolve(
@@ -107,6 +112,9 @@ def volume_downsampling(internal_volume: InternalVolume):
 
                 current_level_data = downsampled_data
             print("Volume downsampled")
+            end_time = times.time()
+            elapsed_time = end_time - start_time
+            print(f"Elapsed time: {elapsed_time:.6f} seconds")
 
     # # NOTE: remove original level resolution data
     # if internal_volume.downsampling_parameters.remove_original_resolution:

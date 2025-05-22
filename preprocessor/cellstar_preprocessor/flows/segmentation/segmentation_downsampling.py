@@ -34,6 +34,9 @@ from cellstar_preprocessor.tools.magic_kernel_downsampling_3d.magic_kernel_downs
     MagicKernel3dDownsampler,
 )
 
+from cellstar_preprocessor.flows.segmentation.category_set_downsampling_methods_optimized import (
+    downsample_categorical_data_optimized
+)
 
 def sff_segmentation_downsampling(internal_segmentation: InternalSegmentation):
     zarr_structure = open_zarr_structure_from_path(
@@ -84,7 +87,6 @@ def sff_segmentation_downsampling(internal_segmentation: InternalSegmentation):
         if internal_segmentation.downsampling_parameters.remove_original_resolution:
             del lattice_gr[1]
             print("Original resolution data removed for segmentation")
-
     elif (
         internal_segmentation.primary_descriptor
         == SegmentationPrimaryDescriptor.mesh_list
@@ -104,6 +106,7 @@ def sff_segmentation_downsampling(internal_segmentation: InternalSegmentation):
                     group_ref = original_detail_lvl_mesh_list_group
 
                     for level, fraction in simplification_curve.items():
+                        print("level")
                         if (
                             density_threshold != 0
                             and compute_vertex_density(group_ref, mode=calc_mode)
@@ -176,13 +179,18 @@ def _create_category_set_downsamplings(
             {"ratio": 1, "grid": original_data, "set_table": initial_set_table}
         )
     ]
+    
     for i in range(downsampling_steps):
         current_set_table = SegmentationSetTable(
             original_data, value_to_segment_id_dict_for_specific_lattice_id
         )
+        
         # on first iteration (i.e. when doing x2 downsampling), it takes original_data and initial_set_table with set of singletons
         levels.append(
-            downsample_categorical_data(magic_kernel, levels[i], current_set_table)
+            # downsample_categorical_data(magic_kernel, levels[i], current_set_table)
+            downsample_categorical_data_optimized(
+                magic_kernel, levels[i], current_set_table
+            )
         )
 
     # remove original data, as they are already stored
@@ -196,3 +204,4 @@ def _create_category_set_downsamplings(
         params_for_storing=params_for_storing,
         time_frame=time_frame,
     )
+
