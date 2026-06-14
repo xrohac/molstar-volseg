@@ -86,6 +86,10 @@ from cellstar_preprocessor.flows.segmentation.segmentation_downsampling import (
     sff_segmentation_downsampling,
 )
 
+from cellstar_preprocessor.flows.segmentation.segmentation_downsampling_amd import ( 
+    sff_segmentation_downsampling_amd,
+)                                                                  
+
 from cellstar_preprocessor.flows.segmentation.sff_preprocessing import sff_preprocessing
 from cellstar_preprocessor.flows.volume.extract_metadata_from_map import (
     extract_metadata_from_map,
@@ -389,8 +393,8 @@ class MAPProcessVolumeTask(TaskBase):
     def execute(self) -> None:
         volume = self.internal_volume
         map_preprocessing(volume)
-        # volume_downsampling(volume)
-        volume_downsampling_gpu(volume)
+        volume_downsampling(volume)
+        # volume_downsampling_gpu(volume)
 
 
 class NIIProcessVolumeTask(TaskBase):
@@ -518,10 +522,11 @@ class MaskProcessSegmentationTask(TaskBase):
 
     def execute(self) -> None:
         segmentation = self.internal_segmentation
-        # mask_segmentation_preprocessing(internal_segmentation=segmentation)
-        mask_segmentation_preprocessing_gpu(internal_segmentation=segmentation)
+        mask_segmentation_preprocessing(internal_segmentation=segmentation)
+        # mask_segmentation_preprocessing_gpu(internal_segmentation=segmentation)
         # sff_segmentation_downsampling(segmentation)
-        sff_segmentation_downsampling_gpu(segmentation)
+        # sff_segmentation_downsampling_gpu(segmentation)
+        sff_segmentation_downsampling_amd(segmentation)
 
 class ProcessGeometricSegmentationTask(TaskBase):
     def __init__(self, internal_segmentation: InternalSegmentation):

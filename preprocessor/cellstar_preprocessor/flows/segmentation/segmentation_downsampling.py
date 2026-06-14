@@ -195,8 +195,20 @@ def _create_category_set_downsamplings(
 
     # remove original data, as they are already stored
     levels.pop(0)
+    print(f"Levels after downsampling: {len(levels)}")
+    print(f"Levels: {[level.get_ratio() for level in levels]}")
+    print(
+        f"Ratios to be stored: {ratios_to_be_stored}, "
+        f"levels ratios: {[level.get_ratio() for level in levels]}"
+    )
     # remove all with ratios that are not in ratios_to_be_stored
     levels = [level for level in levels if level.get_ratio() in ratios_to_be_stored]
+    print(f"Levels after filtering: {len(levels)}")
+    print(f"Levels after filtering: {[level.get_ratio() for level in levels]}")
+    print(
+        f"Ratios to be stored: {ratios_to_be_stored}, "
+        f"levels ratios: {[level.get_ratio() for level in levels]}"
+    )
     # store levels list in zarr structure (can be separate function)
     store_downsampling_levels_in_zarr(
         levels,
