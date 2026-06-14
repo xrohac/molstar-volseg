@@ -520,8 +520,8 @@ class MaskProcessSegmentationTask(TaskBase):
         segmentation = self.internal_segmentation
         # mask_segmentation_preprocessing(internal_segmentation=segmentation)
         mask_segmentation_preprocessing_gpu(internal_segmentation=segmentation)
-        # sff_segmentation_downsampling(segmentation)
-        sff_segmentation_downsampling_gpu(segmentation)
+        sff_segmentation_downsampling(segmentation)
+        # sff_segmentation_downsampling_gpu(segmentation)
 
 class ProcessGeometricSegmentationTask(TaskBase):
     def __init__(self, internal_segmentation: InternalSegmentation):
