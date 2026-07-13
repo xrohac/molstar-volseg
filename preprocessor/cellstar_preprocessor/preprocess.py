@@ -520,8 +520,11 @@ class MaskProcessSegmentationTask(TaskBase):
         segmentation = self.internal_segmentation
         # mask_segmentation_preprocessing(internal_segmentation=segmentation)
         mask_segmentation_preprocessing_gpu(internal_segmentation=segmentation)
-        sff_segmentation_downsampling(segmentation)
-        # sff_segmentation_downsampling_gpu(segmentation)
+        # GPU-accelerated categorical-set downsampling. Produces byte-identical
+        # grids and set-tables to the CPU reference (sff_segmentation_downsampling);
+        # swap back to that line if a CUDA device is unavailable.
+        sff_segmentation_downsampling_gpu(segmentation)
+        # sff_segmentation_downsampling(segmentation)
 
 class ProcessGeometricSegmentationTask(TaskBase):
     def __init__(self, internal_segmentation: InternalSegmentation):

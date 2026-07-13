@@ -58,4 +58,9 @@ dependencies:
       - h5py
       - vedo
       - mkdocs-material
-      - cupy
+      # GPU acceleration is now vendor-neutral (PyTorch) instead of CuPy/CUDA.
+      # Default install is the CPU build (always works). For hardware accel:
+      #   * NVIDIA:            pip install torch  (CUDA build)
+      #   * AMD/Linux (ROCm):  pip install torch --index-url https://download.pytorch.org/whl/rocm6.0
+      #   * AMD/Intel/Windows: pip install torch-directml
+      - torch

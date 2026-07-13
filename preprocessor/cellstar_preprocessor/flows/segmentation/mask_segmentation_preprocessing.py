@@ -16,6 +16,21 @@ from cellstar_preprocessor.model.input import SegmentationPrimaryDescriptor
 from cellstar_preprocessor.model.segmentation import InternalSegmentation
 
 
+def normalization_permutation_mrcfile(current_order: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Return the source-axis permutation used by the CPU MRC normalizer.
+
+    MRC stores ``(section, row, column)`` while ``mapc``, ``mapr`` and ``maps``
+    describe which physical axis each of those dimensions represents.  Keeping
+    this calculation as a pure helper lets the chunked GPU path use precisely
+    the same layout as the CPU reference.
+    """
+    if sorted(current_order) != [0, 1, 2]:
+        raise ValueError(f"Invalid MRC axis order: {current_order}")
+
+    axis_to_source = {physical_axis: source_axis for source_axis, physical_axis in enumerate(current_order)}
+    return tuple(2 - axis_to_source[physical_axis] for physical_axis in range(3))
+
+
 def _normalize_axis_order_mrcfile_numpy(
     arr: np.memmap, mrc_header: object
 ) -> np.memmap:
@@ -27,13 +42,7 @@ def _normalize_axis_order_mrcfile_numpy(
 
     if current_order != (0, 1, 2):
         print(f"Reordering axes from {current_order}...")
-        ao = {v: i for i, v in enumerate(current_order)}
-        # TODO: optimize this to a single transpose
-        arr = arr.transpose().transpose(ao[2], ao[1], ao[0]).transpose()
-    else:
-        arr = arr.transpose()
-
-    return arr
+    return arr.transpose(normalization_permutation_mrcfile(current_order))
 
 
 def mask_segmentation_preprocessing(internal_segmentation: InternalSegmentation):

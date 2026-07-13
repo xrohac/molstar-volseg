@@ -3,7 +3,6 @@ import math
 
 import dask.array as da
 import numpy as np
-import cupy as cp
 import zarr
 from cellstar_preprocessor.flows.common import create_dataset_wrapper
 
@@ -27,12 +26,12 @@ def generate_kernel_3d_arr(pattern: list[int]) -> np.ndarray:
         raise e
     return k
 
-def gaussian_kernel_3d(size: int, sigma: float) -> cp.ndarray:
+def gaussian_kernel_3d(size: int, sigma: float) -> np.ndarray:
     """Generate a 3D Gaussian kernel."""
-    ax = cp.linspace(-(size // 2), size // 2, size)
-    xx, yy, zz = cp.meshgrid(ax, ax, ax, indexing='ij')
-    kernel = cp.exp(-(xx**2 + yy**2 + zz**2) / (2. * sigma**2))
-    return kernel / cp.sum(kernel)
+    ax = np.linspace(-(size // 2), size // 2, size)
+    xx, yy, zz = np.meshgrid(ax, ax, ax, indexing='ij')
+    kernel = np.exp(-(xx**2 + yy**2 + zz**2) / (2. * sigma**2))
+    return kernel / np.sum(kernel)
 
 def normalize_axis_order_mrcfile(dask_arr: da.Array, mrc_header: object) -> da.Array:
     """
