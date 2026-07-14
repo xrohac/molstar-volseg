@@ -55,11 +55,17 @@ class _DownsamplingStub:
 
 def _seg_worker_count(n_lattices: int) -> int:
     """
-    Number of CPU worker processes for parallel lattice downsampling.
+    Number of worker processes for parallel lattice downsampling.
 
-    Override with the ``VS_MASK_WORKERS`` env var. Default is conservative (2) -
-    each worker peaks at several GB for a large grid, so on a ~16 GB box more than
-    2 risks swapping; bump it on machines with more RAM.
+    Override with the ``VS_MASK_WORKERS`` env var. Defaults:
+      * CUDA/ROCm/MPS -> 1: the per-lattice gather/sort/unique runs on the GPU
+        (_gather_and_unique_torch) and is fast, so we process lattices
+        sequentially in-process to actually USE the GPU. Parallel workers set
+        VS_DISABLE_GPU (to avoid DirectML contention) and would bypass it.
+      * CPU/DirectML -> 2: segmentation is CPU-bound there, so parallelism helps;
+        kept conservative because each worker peaks at several GB on a large grid.
+    Tune per machine with VS_MASK_WORKERS (e.g. a big CUDA card may still prefer
+    a few GPU workers).
     """
     env = os.environ.get("VS_MASK_WORKERS")
     if env:
@@ -67,6 +73,8 @@ def _seg_worker_count(n_lattices: int) -> int:
             n = int(env)
         except ValueError:
             n = 1
+    elif backend_name() in ("rocm/cuda", "mps"):
+        n = 1
     else:
         n = 2
     return max(1, min(n, n_lattices))
