@@ -372,6 +372,50 @@ def _unique_rows(rows: np.ndarray):
     return a[first_idx], first_idx, inverse.reshape(-1)
 
 
+def _gather_and_unique_torch(grid_np, xs, ys, zs):
+    """
+    CUDA/ROCm path: gather the 8 block corners of every output voxel, sort each
+    row, and dedup the rows - all on the GPU (device radix sort). Returns
+    ``(unique_rows, first_occurrence_idx, inverse)`` on the host for the
+    sequential id-assignment, matching numpy's
+    ``np.unique(sig, return_index=True, return_inverse=True)`` semantics.
+
+    ``first_idx`` is the first-occurrence index of each unique row (scatter-min
+    of the position array over the inverse map) - the id-assignment only uses it
+    to order groups by first appearance, so the arbitrary sort order of ``uniq``
+    is irrelevant.
+
+    NOTE: the *logic* is exercised on torch-CPU (see the correctness test); GPU
+    throughput is unverified pending NVIDIA hardware. Guarded by a numpy fallback
+    at the call site.
+    """
+    device = get_device()
+    # keep the narrow (int8/int16) dtype from _narrow_labels - CUDA/ROCm/MPS all
+    # handle signed ints, and smaller rows mean less memory + a faster sort.
+    g = torch.as_tensor(np.ascontiguousarray(grid_np)).to(device)
+    ax = [torch.as_tensor(a.astype(np.int64)).to(device) for a in xs]
+    ay = [torch.as_tensor(a.astype(np.int64)).to(device) for a in ys]
+    az = [torch.as_tensor(a.astype(np.int64)).to(device) for a in zs]
+
+    corners = []
+    for a in ax:            # order (x, y, z) == _gather_sort_numpy / reference
+        for b in ay:
+            for c in az:
+                corners.append(g[a[:, None, None], b[None, :, None], c[None, None, :]])
+    sig = torch.stack(corners, dim=-1).reshape(-1, 8)
+    sig = torch.sort(sig, dim=1).values  # canonicalise each block's 8 values
+
+    uniq, inverse = torch.unique(sig, dim=0, return_inverse=True)
+    inverse = inverse.reshape(-1)
+
+    n = sig.shape[0]
+    first_idx = torch.full((uniq.shape[0],), n, dtype=torch.long, device=device)
+    first_idx.scatter_reduce_(
+        0, inverse, torch.arange(n, device=device), reduce="amin", include_self=True
+    )
+    return to_numpy(uniq), to_numpy(first_idx), to_numpy(inverse)
+
+
 def _narrow_labels(grid: np.ndarray) -> np.ndarray:
     """
     Return ``grid`` viewed/cast to the smallest signed int dtype that still holds
@@ -421,20 +465,20 @@ def downsample_categorical_data_gpu(
     # sort (smaller keys). Output dtype is restored at the end.
     gather_grid = _narrow_labels(previous_level_grid)
 
-    # NOTE: the corner gather/sort defaults to numpy - it is memory-bound and
-    # measured faster on the CPU than on DirectML (see _gather_sort_numpy). The
-    # GPU path (_gather_sort_torch) is kept for CUDA/ROCm where it can win; opt
-    # in explicitly via prefer_gpu with a genuinely fast device.
+    # On DirectML the corner gather/sort is memory-bound and measured slower than
+    # numpy, so it defaults to CPU there. On CUDA/ROCm (mature GPU sort) we run the
+    # whole gather + sort + row-dedup on the device (_gather_and_unique_torch);
+    # only the tiny sequential id-assignment below stays on the host. Any device
+    # failure (OOM, unsupported op) falls back to the numpy path.
+    uniq = first_idx = inverse = None
     if prefer_gpu and TORCH_AVAILABLE and backend_name() in ("rocm/cuda", "mps"):
         try:
-            sig_host = _gather_sort_torch(gather_grid, xs, ys, zs)
+            uniq, first_idx, inverse = _gather_and_unique_torch(gather_grid, xs, ys, zs)
         except Exception as e:  # pragma: no cover - hardware/driver dependent
-            print(f"[segmentation] GPU gather failed ({e!r}); using CPU")
-            sig_host = _gather_sort_numpy(gather_grid, xs, ys, zs)
-    else:
+            print(f"[segmentation] GPU gather/unique failed ({e!r}); using CPU")
+    if uniq is None:
         sig_host = _gather_sort_numpy(gather_grid, xs, ys, zs)
-
-    uniq, first_idx, inverse = _unique_rows(sig_host)
+        uniq, first_idx, inverse = _unique_rows(sig_host)
 
     # Resolve ids by walking unique block-signatures in first-occurrence
     # (== block iteration) order, so brand-new categories get assigned the same
