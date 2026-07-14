@@ -11,6 +11,7 @@ from cellstar_db.models import (
 from cellstar_preprocessor.flows.common import (
     get_downsamplings,
     open_zarr_structure_from_path,
+    robust_delitem,
 )
 from cellstar_preprocessor.flows.constants import (
     QUANTIZATION_DATA_DICT_ATTR_NAME,
@@ -190,7 +191,7 @@ def extract_metadata_from_map(internal_volume: InternalVolume):
 
     # NOTE: remove original level resolution data
     if internal_volume.downsampling_parameters.remove_original_resolution:
-        del root[VOLUME_DATA_GROUPNAME]["1"]
+        robust_delitem(root[VOLUME_DATA_GROUPNAME], "1")
         print("Original resolution volume data removed")
 
         current_levels: list[DownsamplingLevelInfo] = metadata_dict["volumes"][

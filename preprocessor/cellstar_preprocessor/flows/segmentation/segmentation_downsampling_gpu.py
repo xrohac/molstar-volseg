@@ -9,6 +9,7 @@ from cellstar_preprocessor.flows.common import (
     compute_downsamplings_to_be_stored,
     compute_number_of_downsampling_steps,
     open_zarr_structure_from_path,
+    robust_delitem,
 )
 from cellstar_preprocessor.flows.constants import (
     LATTICE_SEGMENTATION_DATA_GROUPNAME,
@@ -116,7 +117,7 @@ def _downsample_one_lattice(
         )
 
     if remove_original:
-        del lattice_gr["1"]
+        robust_delitem(lattice_gr, "1")
     return lattice_id
 
 

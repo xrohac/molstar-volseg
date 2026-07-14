@@ -26,6 +26,62 @@ from PIL import ImageColor
 from pyometiff import OMETIFFReader
 
 
+def robust_delitem(group, key, attempts: int = 40, delay: float = 0.5):
+    """
+    Delete ``group[key]`` (a zarr group -> shutil.rmtree), retrying on Windows
+    file locks.
+
+    Deleting a freshly-written zarr group can transiently fail on Windows with
+    ``PermissionError [WinError 32]`` when antivirus / the search indexer is
+    still holding a just-created chunk file open. zarr's delete may also fail
+    *part way* (it removes the ``.zgroup`` marker, then trips on a locked chunk),
+    which leaves the entry looking absent (``KeyError`` on retry) while the
+    directory with the locked file physically remains. So we first try zarr's
+    delete, then fall back to retrying ``shutil.rmtree`` on the underlying
+    directory until it is actually gone.
+    """
+    import os
+    import shutil
+    import time
+
+    try:
+        del group[key]
+        return
+    except (KeyError, PermissionError):
+        pass  # fall through to filesystem-level cleanup with retries
+
+    base = getattr(group.store, "path", None)
+    if base is None:
+        # non-directory store: just retry the logical delete
+        for i in range(attempts):
+            try:
+                del group[key]
+                return
+            except KeyError:
+                return
+            except PermissionError:
+                if i == attempts - 1:
+                    raise
+                time.sleep(delay)
+        return
+
+    gp = str(group.path).strip("/")
+    parts = [p for p in gp.split("/") if p] + [str(key)]
+    dir_path = os.path.join(base, *parts)
+    for i in range(attempts):
+        if not os.path.exists(dir_path):
+            return
+        try:
+            shutil.rmtree(dir_path)
+            return
+        except FileNotFoundError:
+            return
+        except (PermissionError, OSError):
+            if i == attempts - 1:
+                raise
+            time.sleep(delay)
+
+
 def _is_channels_correct(source_ometiff_metadata):
     ch = list(source_ometiff_metadata["Channels"].keys())
     number_of_channels = source_ometiff_metadata["SizeC"]

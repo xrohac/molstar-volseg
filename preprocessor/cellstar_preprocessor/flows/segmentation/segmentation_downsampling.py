@@ -6,6 +6,7 @@ from cellstar_preprocessor.flows.common import (
     compute_downsamplings_to_be_stored,
     compute_number_of_downsampling_steps,
     open_zarr_structure_from_path,
+    robust_delitem,
 )
 from cellstar_preprocessor.flows.constants import (
     LATTICE_SEGMENTATION_DATA_GROUPNAME,
@@ -85,7 +86,7 @@ def sff_segmentation_downsampling(internal_segmentation: InternalSegmentation):
 
         # NOTE: removes original level resolution data
         if internal_segmentation.downsampling_parameters.remove_original_resolution:
-            del lattice_gr[1]
+            robust_delitem(lattice_gr, 1)
             print("Original resolution data removed for segmentation")
     elif (
         internal_segmentation.primary_descriptor
