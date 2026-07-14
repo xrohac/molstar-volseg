@@ -69,15 +69,13 @@ def downsample_categorical_data(
     target_voxels_coords = np.array(
         magic_kernel.extract_target_voxels_coords(previous_level_grid.shape)
     )
-    origin_coords = np.array([0, 0, 0])
-    max_coords = np.subtract(previous_level_grid.shape, (1, 1, 1))
+    grid_shape = np.array(previous_level_grid.shape)
 
     for start_coords in target_voxels_coords:
-        end_coords = start_coords + 2
-        if (end_coords < origin_coords).any():
-            end_coords = np.fmax(end_coords, origin_coords)
-        if (end_coords > max_coords).any():
-            end_coords = np.fmin(end_coords, max_coords)
+        # Slices use an exclusive end.  Clamping to the full shape retains a
+        # one-voxel partial block on odd grid edges instead of silently leaving
+        # its output voxel at the fill value.
+        end_coords = np.minimum(start_coords + 2, grid_shape)
         
         block: np.ndarray = previous_level_grid[
             start_coords[0] : end_coords[0],

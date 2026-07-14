@@ -2,7 +2,6 @@ import numcodecs
 import numpy as np
 import zarr
 import time as times
-import cupy as cp
 from cellstar_preprocessor.flows.common import create_dataset_wrapper
 from cellstar_preprocessor.flows.segmentation.downsampling_level_dict import (
     DownsamplingLevelDict,

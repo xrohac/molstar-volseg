@@ -4,7 +4,6 @@ from typing import Union
 import dask.array as da
 import mrcfile
 import numpy as np
-import cupy as cp
 
 
 def read_ccp4_map_mrcfile(map_path: Path) -> np.ndarray:
@@ -102,18 +101,31 @@ def quantize_data(
     return d
 
 
-def decode_quantized_data_gpu(data_dict: dict) -> Union[cp.ndarray, np.ndarray]:
-    # this will decode back to log data
+def decode_quantized_data_gpu(data_dict: dict):
+    """
+    Vendor-neutral GPU decode of log-quantized data via PyTorch (AMD/NVIDIA/
+    Intel/Apple). Falls back to the numpy/dask path when torch is unavailable.
+    Returns a torch.Tensor on the active device, or a dask/numpy array on CPU.
+    """
+    try:
+        from cellstar_preprocessor.flows.gpu_backend import (
+            TORCH_AVAILABLE,
+            get_device,
+            torch,
+        )
+    except Exception:
+        TORCH_AVAILABLE = False
+
+    if not TORCH_AVAILABLE:
+        return decode_quantized_data(data_dict)
+
     delta = (data_dict["max"] - data_dict["min"]) / (data_dict["num_steps"] - 1)
-    log_data = data_dict["data"].astype(dtype=data_dict["src_type"])
-    cp.multiply(log_data, delta, out=log_data)
-    cp.add(log_data, data_dict["min"], out=log_data)
-
-    original_data = cp.exp(log_data)
-    one = np.array([1], dtype=original_data.dtype)[0]
-    original_data = cp.subtract(original_data, one)
-    cp.add(original_data, data_dict["to_remove_negatives"], out=original_data)
-
+    log_data = torch.as_tensor(np.ascontiguousarray(data_dict["data"])).to(
+        device=get_device(), dtype=torch.float32
+    )
+    log_data = log_data * float(delta) + float(data_dict["min"])
+    original_data = torch.exp(log_data)
+    original_data = original_data - 1.0 + float(data_dict["to_remove_negatives"])
     return original_data
 
 def decode_quantized_data(data_dict: dict) -> Union[da.Array, np.ndarray]:
